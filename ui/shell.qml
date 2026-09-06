@@ -105,12 +105,19 @@ ShellRoot {
                 canGoUp: pane.canGoUp
                 viewMode: pane.viewMode
                 showHidden: pane.showHidden
-                onBackRequested: pane.goBack()
+                onViewChosen: function (mode) { pane.viewMode = mode }
+                reclaimActive: pane.reclaimWalk && reclaimMapOn
+                onReclaimRequested: {
+                    if (!pane.reclaimWalk) {
+                        pane.act("reclaim")
+                        reclaimMapOn = true
+                    } else {
+                        reclaimMapOn = !reclaimMapOn
+                    }
+                }
                 onUpRequested: pane.openParent()
                 onSearchRequested: pane.act("search")
-                onViewChosen: function (mode) { pane.viewMode = mode }
                 // The path bar's four. The pane navigates and answers for the keyboard exactly as it
-                // does for every other route in, so a path typed and a row opened end the same way.
                 onPathEntered: function (path) { pane.open(path) }
                 onEditClosed: pane.forceActiveFocus()
                 // Tab reads the directory with the same peek the columns view makes of an ancestor,
@@ -197,6 +204,7 @@ ShellRoot {
                 height: pane.height
                 visible: pane.reclaimWalk && reclaimMapOn
                 pane: pane
+                onStageRequested: reclaimMapOn = false
             }
 
             Flea.Preview { id: preview; pane: pane }

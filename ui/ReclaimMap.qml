@@ -3,20 +3,22 @@ import qs.Commons
 import "." as Flea
 import "js/ReclaimTree.js" as ReclaimTree
 import "js/ReclaimPaint.js" as ReclaimPaint
-import "js/Ops.js" as Ops
 import "js/Format.js" as Format
 
 // One scan, eight readings: the reclaim results drawn as a treemap, folder cards, a sunburst, a
 // flame, bubbles, a mind map, ranked bars and an age map. b opens this over the results and
-// cycles the readings once it is up; a click on anything lands the cursor on the row it drew, so
-// dd and the strip's Quick Wins stage the very tree the operator is looking at, with undo behind
-// both.
+// cycles the readings once it is up; a click on anything lands the cursor on the row it drew.
+// The strip's Quick Wins never deletes: it selects every tree the scan found and steps the
+// overlay aside, so the seeing comes before the dd, and undo stays behind both.
 Rectangle {
     id: root
 
     property var pane: null
     property string mode: "treemap"
     property var pickedNode: null
+    // Fired by the strip's Quick Wins: everything the scan found is selected and the overlay
+    // steps aside, so the operator sees the trees highlighted in the listing before acting.
+    signal stageRequested()
     // Rebuilt beside every rows reply: one tree, and the mode strip is only a choice of reading.
     readonly property var model: pane ? ReclaimTree.build(pane.rows, pane.held, pane.path) : null
     readonly property int treeCount: model ? ReclaimTree.leaves(model).length : 0
@@ -70,9 +72,7 @@ Rectangle {
         return null
     }
 
-    // The strip: eight readings on the left, the one destructive shortcut on the right. Quick Wins
-    // selects every tree the scan listed and hands them to the trash together; undo is the same z
-    // it always is, and nothing is deleted that the listing does not already name.
+    // The strip: eight readings on the left, the staging shortcut on the right.
     Item {
         id: strip
         anchors.top: parent.top
@@ -124,8 +124,9 @@ Rectangle {
             Text {
                 id: qwLabel
                 anchors.centerIn: parent
-                // The button is the scan's own answer: everything it found, staged together.
-                text: "Quick Wins · trash " + root.treeCount + " trees (" + (root.model ? Format.size(root.model.bytes) : "0 B") + ")"
+                // Staging, not deleting: the press selects everything the scan found and hands
+                // the listing back with the trees highlighted, so the seeing comes before the dd.
+                text: "Quick Wins · stage " + root.treeCount + " trees (" + (root.model ? Format.size(root.model.bytes) : "0 B") + ")"
                 color: qwTap.pressed ? Theme.color.background : Theme.color.accent
                 font.family: Theme.font.family
                 font.pixelSize: Theme.font.caption
@@ -140,7 +141,7 @@ Rectangle {
                 onSingleTapped: {
                     if (root.treeCount > 0 && root.pane) {
                         root.pane.selectAll()
-                        Ops.trash(root.pane)
+                        root.stageRequested()
                     }
                 }
             }
@@ -183,6 +184,7 @@ Rectangle {
         function onModelChanged() { canvas.requestPaint() }
         function onModeChanged() { canvas.requestPaint() }
         function onPickedNodeChanged() { canvas.requestPaint() }
+    }
 
     Component.onCompleted: canvas.requestPaint()
 }
