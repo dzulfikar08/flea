@@ -13,8 +13,12 @@ import "js/Nav.js" as Nav
 import "js/Ops.js" as Ops
 import "js/Renderer.js" as Renderer
 import "js/Search.js" as Search
+import "js/Reclaim.js" as Reclaim
 
 ShellRoot {
+    // The reclaim views overlay, b-toggled over the pane's results; hidden again by navigation,
+    // which ends the walk the views draw.
+    property bool reclaimMapOn: false
     FloatingWindow {
         id: fleaWindow
         title: "Flea"
@@ -151,6 +155,13 @@ ShellRoot {
                 // Issue 9. ViewState persists the stop and Theme derives its own tokens from it, so
                 // the whole window follows without any surface reading the chord itself.
                 onTextSizeRequested: function (direction) { fleaWindow.applyTextSize(direction) }
+                onReclaimMapRequested: {
+                    if (!reclaimMapOn) {
+                        reclaimMapOn = true
+                    } else {
+                        reclaimMap.cycle()
+                    }
+                }
                 onOpened: function (path) { shareBrowser.close() }
             }
 
@@ -168,10 +179,24 @@ ShellRoot {
                 fsFree: pane.fsFree
                 searchRunning: pane.searchRunning
                 searchLine: pane.searchMode === "results"
-                            ? Search.statusLine(pane.searchRunning, pane.total, pane.searchScanned, pane.searchMs)
+                            ? (pane.reclaimWalk
+                               ? Reclaim.statusLine(pane.searchRunning, pane.total, pane.searchScanned, pane.reclaimBytes, pane.searchMs)
+                               : Search.statusLine(pane.searchRunning, pane.total, pane.searchScanned, pane.searchMs))
                             : ""
-                searchKeys: Search.statusKeys(pane.searchRunning)
+                searchKeys: pane.reclaimWalk ? Reclaim.statusKeys(pane.searchRunning) : Search.statusKeys(pane.searchRunning)
                 onTransferCancelRequested: function (id) { backend.transfercancel(id) }
+            }
+
+            // Explicit geometry, not anchors.fill: the component's own pane property shadows the
+            // pane id in that binding and the fill never lands.
+            Flea.ReclaimMap {
+                id: reclaimMap
+                x: pane.x
+                y: pane.y
+                width: pane.width
+                height: pane.height
+                visible: pane.reclaimWalk && reclaimMapOn
+                pane: pane
             }
 
             Flea.Preview { id: preview; pane: pane }
