@@ -229,8 +229,13 @@ fn handle_line(
             }
             out.flush().ok();
         }
-        Request::ListPaths { paths, first } =>
-            listpaths::answer(out, st, pool, tb, &paths, first),
+        Request::ListPaths { paths, first } => {
+            // The picker's listing is the walk's to fill no more than any other: the reclaim ends
+            // before it, and its measured-bytes flag goes with the listing it measured.
+            end_reclaim(out, st, pool, true);
+            st.reclaim_sizes = false;
+            listpaths::answer(out, st, pool, tb, &paths, first);
+        }
         Request::Window { start, count } => {
             write_window(out, st, start, count, tb);
             out.flush().ok();

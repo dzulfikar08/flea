@@ -342,7 +342,8 @@ The walk is answered in three parts, the same shapes a `search` answers:
 2. `reclaiming` lines carrying the match count, the entries scanned and the bytes sized so
    far, at most one every 100 ms while the walk runs.
 3. One terminal `reclaimed` line, written after the ranking, carrying the final counts and
-   the bytes total the rows cover.
+   the bytes total of the rows the walk sized; a walk cancelled mid-sizing reports the bytes
+   it completed, not the total across rows it never sized.
 
 `list`, `sort` and `search` each end a running reclaim before they touch the listing, and
 answer their own lines after the reclaim's terminal `reclaimed`.

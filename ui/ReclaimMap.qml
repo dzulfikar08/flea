@@ -139,7 +139,9 @@ Rectangle {
                 id: qwTap
                 acceptedButtons: Qt.LeftButton
                 onSingleTapped: {
-                    if (root.treeCount > 0 && root.pane) {
+                    // Staging waits for the scan to finish: a walk still running would rank its
+                    // rows once more and reshuffle the selection being handed back.
+                    if (root.treeCount > 0 && root.pane && !root.pane.searchRunning) {
                         root.pane.selectAll()
                         root.stageRequested()
                     }
@@ -163,6 +165,7 @@ Rectangle {
             var ctx = canvas.getContext("2d")
             var drawn = ReclaimTree.layout(root.mode, root.model, width, height, Date.now() / 1000)
             canvas.shapes = drawn
+            root.shapes = drawn
             ReclaimPaint.draw(ctx, drawn, root.palette, root.pickedNode, width, height)
         }
 

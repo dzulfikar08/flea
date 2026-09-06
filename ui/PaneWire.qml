@@ -300,6 +300,9 @@ Item {
                 pane.held = 0
                 pane.rows = []
                 pane.cursorIndex = 0
+                // A dead backend answers no terminal walk line either, so a running scan's flag
+                // goes with it: otherwise esc would keep cancelling a walk nothing is walking.
+                pane.searchRunning = false
                 // No transferdone is coming from a backend that is gone, and nothing else ends a
                 // running transfer, so the card would crawl over a dead child until the app closed.
                 pane.transfer = Ops.emptyTransfer()

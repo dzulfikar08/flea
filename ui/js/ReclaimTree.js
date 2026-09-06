@@ -285,7 +285,7 @@ function bubbleR(node, parent, cap) {
 
 // The ranked listing drawn as bars: heaviest at the top, the number at the end of each bar.
 function topsizes(root, x, y, w, h, out) {
-    var items = leaves(root)
+    var items = leaves(root).slice().sort(function (a, b) { return b.bytes - a.bytes })
     var max = 0
     for (var i = 0; i < items.length; i++) {
         if (items[i].bytes > max) {

@@ -149,16 +149,19 @@ impl Reclaim {
                 continue;
             }
             let child = if rel.is_empty() { name.to_string() } else { format!("{}/{}", rel, name) };
+            // A directory on another filesystem is refused before anything else about it is
+            // considered: a mount that happens to be named like a target would otherwise be
+            // listed and then sized across the boundary, network share included.
+            let entry_dev = entry.metadata().map(|m| m.dev()).unwrap_or(0);
+            if self.dev != 0 && entry_dev != 0 && entry_dev != self.dev {
+                continue;
+            }
             // corner: there is no hidden flag on a reclaim — .venv and __pycache__ are the point.
             if TARGETS.contains(&name.as_ref()) {
                 // A match is reported but never descended into: its own size already covers
                 // anything nested, and a monorepo's nested node_modules would answer twice.
                 listing.push(&child, true);
                 self.found.push(child);
-                continue;
-            }
-            let entry_dev = entry.metadata().map(|m| m.dev()).unwrap_or(0);
-            if self.dev != 0 && entry_dev != 0 && entry_dev != self.dev {
                 continue;
             }
             self.pending.push(child);
@@ -291,6 +294,8 @@ mod tests {
         let d = TestDir::new("cross");
         d.dir("proj/target");
         d.file("proj/target/app", "x");
+        d.dir("proj/node_modules/left-pad");
+        d.file("proj/node_modules/left-pad/index.js", "x");
         d.dir("proj/src");
         d.file("proj/src/main.rs", "fn main() {}");
 
