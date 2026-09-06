@@ -115,6 +115,7 @@ ShellRoot {
                         reclaimMapOn = !reclaimMapOn
                     }
                 }
+                onBackRequested: pane.goBack()
                 onUpRequested: pane.openParent()
                 onSearchRequested: pane.act("search")
                 // The path bar's four. The pane navigates and answers for the keyboard exactly as it
